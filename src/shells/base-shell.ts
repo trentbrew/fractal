@@ -2,20 +2,24 @@
  * Base class for all Thing shells
  * 
  * Encapsulates:
- * - Entity signal subscription
- * - Vantage resolution
+ * - Entity signal subscription via useEntity()
+ * - Vantage resolution via resolveShell()
  * - Shadow DOM rendering
- * - Crossfade logic
+ * - Crossfade logic at territory boundaries
+ * - CSS custom property cascade (--vantage)
  */
 
-import type { EntityData, ResolvedShell } from '../types.js';
-import { resolveShell } from './registry.js';
+import { effect } from '../signals/index.js';
+import { useEntity, type EntitySignal } from '../signals/entity-signal.js';
+import { resolveShell, getShellAtVantage } from './registry.js';
+import type { ResolvedShell, ShellConfig } from '../types.js';
 
 export abstract class ThingShell extends HTMLElement {
   private _entityId: string = '';
   private _vantage: number = 8; // card default
-  private _signal: { value: EntityData } | null = null;
+  private _entitySignal: EntitySignal | null = null;
   private _dispose: (() => void) | null = null;
+  private _shadowRoot: ShadowRoot | null = null;
 
   static get observedAttributes() {
     return ['entity', 'vantage'];
@@ -33,6 +37,19 @@ export abstract class ThingShell extends HTMLElement {
     this._vantage = v;
     this.updateVantageStyles();
     this.onVantageChange(v);
+    this.render();
+  }
+
+  get entitySignal(): EntitySignal | null {
+    return this._entitySignal;
+  }
+
+  get resolvedShell(): ResolvedShell {
+    return resolveShell(this.vantage);
+  }
+
+  get currentShell(): ShellConfig | null {
+    return getShellAtVantage(this.vantage);
   }
 
   attributeChangedCallback(name: string, oldVal: string, newVal: string) {
@@ -49,7 +66,7 @@ export abstract class ThingShell extends HTMLElement {
   }
 
   connectedCallback() {
-    this.attachShadow({ mode: 'open' });
+    this._shadowRoot = this.attachShadow({ mode: 'open' });
     this.updateVantageStyles();
     this.render();
   }
@@ -57,60 +74,109 @@ export abstract class ThingShell extends HTMLElement {
   disconnectedCallback() {
     this._dispose?.();
     this._dispose = null;
+    this._entitySignal = null;
   }
 
   protected abstract render(): void;
 
-  protected getEntityData(): EntityData | null {
-    return this._signal?.value ?? null;
+  protected getEntityData() {
+    return this._entitySignal?.getSnapshot() ?? null;
   }
 
-  protected getResolvedShell(): ResolvedShell {
-    return resolveShell(this.vantage);
+  protected getFact(attr: string) {
+    return this._entitySignal?.facts.peek()[attr] ?? null;
+  }
+
+  protected getAllFacts() {
+    return this._entitySignal?.facts.peek() ?? {};
+  }
+
+  protected async setFact(attr: string, value: unknown) {
+    if (this._entitySignal) {
+      await this._entitySignal.set(attr, value as any);
+    }
   }
 
   protected onVantageChange(_vantage: number): void {
     // Override in subclasses to respond to vantage changes
   }
 
-  private updateVantageStyles(): void {
+  protected updateVantageStyles(): void {
     this.style.setProperty('--vantage', String(this._vantage));
+    
+    // Set crossfade for dual-shell rendering
+    const { crossfade, lower, upper } = this.resolvedShell;
+    this.style.setProperty('--crossfade', String(crossfade));
+    this.style.setProperty('--lower-shell', lower?.name ?? '');
+    this.style.setProperty('--upper-shell', upper?.name ?? '');
+    
+    // Notify shadow DOM children
+    if (this._shadowRoot) {
+      this._shadowRoot.host.style.setProperty('--vantage', String(this._vantage));
+      this._shadowRoot.host.style.setProperty('--crossfade', String(crossfade));
+    }
+  }
+
+  protected renderHTML(html: string): void {
+    if (this._shadowRoot) {
+      this._shadowRoot.innerHTML = html;
+    }
+  }
+
+  protected renderTemplate(template: HTMLTemplateElement): void {
+    if (this._shadowRoot && template.content) {
+      this._shadowRoot.appendChild(template.content.cloneNode(true));
+    }
   }
 
   private subscribeToEntity(): void {
     if (!this._entityId) return;
-    
-    // In the actual implementation, this would use the TqlSignalBridge
-    // For now, we create a minimal reactive pattern
-    this._signal = {
-      value: {
-        facts: {},
-        links: [],
-        syncStatus: 'synced',
-      },
-    };
 
-    // Effect to re-render when data changes
-    // TODO: wire up to TqlSignalBridge
-  }
+    this._entitySignal = useEntity(this._entityId);
 
-  protected updateFacts(facts: Record<string, unknown>): void {
-    if (this._signal) {
-      this._signal.value = {
-        ...this._signal.value,
-        facts: { ...this._signal.value.facts, ...facts },
-      };
+    // Set up reactive effect
+    this._dispose?.();
+    this._dispose = effect(() => {
+      // Access the facts to track them
+      const _ = this._entitySignal?.facts.value;
       this.render();
-    }
+    });
   }
+}
 
-  protected updateSyncStatus(status: 'synced' | 'pending' | 'conflict'): void {
-    if (this._signal) {
-      this._signal.value = {
-        ...this._signal.value,
-        syncStatus: status,
-      };
-      this.render();
+/**
+ * Mixin for shells that need dual-shell crossfade rendering
+ */
+export function withCrossfade<T extends new (...args: any[]) => ThingShell>(Base: T) {
+  return class extends Base {
+    protected get lowerShellOpacity(): number {
+      return 1 - this.resolvedShell.crossfade;
     }
-  }
+
+    protected get upperShellOpacity(): number {
+      return this.resolvedShell.crossfade;
+    }
+
+    protected shouldRenderUpperShell(): boolean {
+      const { upper, crossfade } = this.resolvedShell;
+      return upper !== null && crossfade > 0 && crossfade < 1;
+    }
+
+    protected renderCrossfadeStyles(): string {
+      return `
+        <style>
+          :host {
+            --lower-opacity: ${this.lowerShellOpacity};
+            --upper-opacity: ${this.upperShellOpacity};
+          }
+          .shell-lower {
+            opacity: var(--lower-opacity, 1);
+          }
+          .shell-upper {
+            opacity: var(--upper-opacity, 0);
+          }
+        </style>
+      `;
+    }
+  };
 }

@@ -18,9 +18,7 @@
     "signals"
   ],
   "license": "MIT",
-  "dependencies": {
-    "signal-utils": "^0.1.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@vitest/ui": "^4.1.2",
     "http-server": "^14.0.0",

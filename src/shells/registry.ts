@@ -18,23 +18,20 @@ export const SHELL_REGISTRY: ShellConfig[] = [
 
 export function resolveShell(vantage: number): ResolvedShell {
   const floor = Math.floor(vantage);
-  const ceil = Math.ceil(vantage);
   const crossfade = vantage % 1;
 
   const lower = SHELL_REGISTRY.find(
     s => floor >= s.min && floor <= s.max
   ) || null;
 
-  // If vantage is an integer, upper is the next shell
+  // At integer vantage (crossfade = 0), no upper shell needed
   if (crossfade === 0) {
-    const upperIdx = SHELL_REGISTRY.findIndex(s => s.min > floor);
-    const upper = upperIdx >= 0 ? SHELL_REGISTRY[upperIdx] : null;
-    return { lower, upper, crossfade: 1, vantage };
+    return { lower, upper: null, crossfade: 0, vantage };
   }
 
-  const upper = SHELL_REGISTRY.find(
-    s => ceil >= s.min && ceil <= s.max
-  ) || null;
+  // At fractional vantage, find the next shell
+  const upperIdx = SHELL_REGISTRY.findIndex(s => s.min > floor);
+  const upper = upperIdx >= 0 ? SHELL_REGISTRY[upperIdx] : null;
 
   return { lower, upper, crossfade, vantage };
 }

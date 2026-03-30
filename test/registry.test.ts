@@ -1,8 +1,9 @@
 /**
- * Tests for shell registry
+ * Tests for base shell and registry
  */
 
-import { resolveShell, SHELL_REGISTRY } from '../src/shells/registry.js';
+import { describe, test, expect, beforeEach, afterEach } from 'vitest';
+import { resolveShell, SHELL_REGISTRY, getShellAtVantage } from '../src/shells/registry.js';
 
 describe('SHELL_REGISTRY', () => {
   test('has correct number of shells', () => {
@@ -20,13 +21,21 @@ describe('SHELL_REGISTRY', () => {
       expect(SHELL_REGISTRY[i].max + 1).toBe(SHELL_REGISTRY[i + 1].min);
     }
   });
+
+  test('each shell has a name', () => {
+    for (const shell of SHELL_REGISTRY) {
+      expect(typeof shell.name).toBe('string');
+      expect(shell.name.length).toBeGreaterThan(0);
+    }
+  });
 });
 
 describe('resolveShell', () => {
-  test('resolves integer vantage to single shell with crossfade 1', () => {
+  test('resolves integer vantage to single shell with no upper', () => {
     const result = resolveShell(5);
     expect(result.lower?.name).toBe('row');
-    expect(result.crossfade).toBe(1);
+    expect(result.crossfade).toBe(0);
+    expect(result.upper).toBeNull();
   });
 
   test('resolves fractional vantage to adjacent shells at boundary', () => {
@@ -43,6 +52,18 @@ describe('resolveShell', () => {
     expect(resolveShell(2).lower?.name).toBe('node');
   });
 
+  test('resolves mention territory (3-4)', () => {
+    expect(resolveShell(3).lower?.name).toBe('mention');
+    expect(resolveShell(4).lower?.name).toBe('mention');
+    expect(resolveShell(3.5).lower?.name).toBe('mention');
+  });
+
+  test('resolves row territory (5-7)', () => {
+    expect(resolveShell(5).lower?.name).toBe('row');
+    expect(resolveShell(7).lower?.name).toBe('row');
+    expect(resolveShell(6).lower?.name).toBe('row');
+  });
+
   test('resolves card territory (8-10)', () => {
     expect(resolveShell(8).lower?.name).toBe('card');
     expect(resolveShell(10).lower?.name).toBe('card');
@@ -54,9 +75,28 @@ describe('resolveShell', () => {
     expect(boundary.upper?.name).toBe('dialog');
   });
 
+  test('resolves dialog territory (11-13)', () => {
+    expect(resolveShell(11).lower?.name).toBe('dialog');
+    expect(resolveShell(13).lower?.name).toBe('dialog');
+  });
+
   test('resolves screen territory (14-20)', () => {
     expect(resolveShell(14).lower?.name).toBe('screen');
     expect(resolveShell(20).lower?.name).toBe('screen');
     expect(resolveShell(17).lower?.name).toBe('screen');
+  });
+});
+
+describe('getShellAtVantage', () => {
+  test('returns shell for any vantage in range', () => {
+    expect(getShellAtVantage(1)?.name).toBe('node');
+    expect(getShellAtVantage(5)?.name).toBe('row');
+    expect(getShellAtVantage(8)?.name).toBe('card');
+    expect(getShellAtVantage(15)?.name).toBe('screen');
+  });
+
+  test('returns null for vantage out of range', () => {
+    expect(getShellAtVantage(-1)).toBeNull();
+    expect(getShellAtVantage(25)).toBeNull();
   });
 });
