@@ -1,0 +1,30 @@
+{
+  "name": "@fractal/fractal-web",
+  "version": "0.1.0",
+  "description": "Fractal Responsiveness Web Components",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "build": "echo 'No build required — ES modules'",
+    "dev": "npx http-server . -p 8080"
+  },
+  "keywords": [
+    "web-components",
+    "fractal",
+    "responsive",
+    "trellis",
+    "signals"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "signal-utils": "^0.1.0"
+  },
+  "devDependencies": {
+    "@vitest/ui": "^4.1.2",
+    "http-server": "^14.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^4.1.2"
+  }
+}
