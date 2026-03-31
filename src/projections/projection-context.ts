@@ -166,6 +166,8 @@ class ProjectionContextClass extends HTMLElement {
 
 customElements.define('projection-context', ProjectionContextClass);
 
+export type ProjectionContextElement = ProjectionContextClass;
+
 // Helper to get projection context from an element
 export function getProjectionContext(element: Element): ProjectionContextValue | null {
   let current: Element | null = element;

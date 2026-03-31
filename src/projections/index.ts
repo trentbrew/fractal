@@ -9,12 +9,15 @@
  * ```
  */
 
-export { 
+export type { 
   ProjectionContextElement,
+  ProjectionType,
+  ProjectionConfig,
+} from './projection-context.js';
+
+export { 
   getProjectionContext,
-  resolveVantageWithContext,
-  type ProjectionType,
-  type ProjectionConfig,
+  resolveEffectiveVantage as resolveVantageWithContext,
 } from './projection-context.js';
 
 export { ProjectionTable } from './projection-table.js';

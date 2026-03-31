@@ -7,8 +7,8 @@
   "types": "src/index.ts",
   "scripts": {
     "test": "vitest run",
-    "build": "echo 'No build required — ES modules'",
-    "dev": "npx http-server . -p 8080"
+    "build": "vite build",
+    "dev": "vite"
   },
   "keywords": [
     "web-components",
@@ -18,11 +18,12 @@
     "signals"
   ],
   "license": "MIT",
-  "dependencies": {},
   "devDependencies": {
     "@vitest/ui": "^4.1.2",
-    "http-server": "^14.0.0",
+    "jsdom": "^29.0.1",
+    "playwright": "^1.58.2",
     "typescript": "^5.0.0",
+    "vite": "^5.4.0",
     "vitest": "^4.1.2"
   }
 }

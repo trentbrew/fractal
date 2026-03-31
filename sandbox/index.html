@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fractal Responsiveness — Sandbox</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f0f1a;
+      color: #e5e7eb;
+      min-height: 100vh;
+    }
+    
+    h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+    
+    .subtitle {
+      color: #9ca3af;
+      margin-bottom: 24px;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    label {
+      font-size: 12px;
+      color: #9ca3af;
+    }
+    
+    input[type="range"] {
+      width: 200px;
+      accent-color: #6366f1;
+    }
+    
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      background: #6366f1;
+      color: white;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.2s;
+    }
+    
+    button:hover {
+      background: #4f46e5;
+    }
+    
+    .canvas-container {
+      background: #1a1a2e;
+      border-radius: 12px;
+      height: 500px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    fractal-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    
+    .vantage-display {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      background: rgba(0,0,0,0.7);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    
+    .legend {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    
+    .legend-item {
+      background: #1a1a2e;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+    
+    .legend-item strong {
+      color: #fff;
+    }
+    
+    .legend-item span {
+      color: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+  <h1>Fractal Responsiveness Sandbox</h1>
+  <p class="subtitle">Test continuous vantage transitions in real-time</p>
+  
+  <div class="controls">
+    <div class="control-group">
+      <label>Vantage: <span id="vantage-value">5.0</span></label>
+      <input type="range" id="vantage-slider" min="0" max="20" step="0.1" value="5">
+    </div>
+    
+    <div class="control-group">
+      <label>Quick Vantage</label>
+      <button id="btn-node">Node (2)</button>
+      <button id="btn-row">Row (5)</button>
+      <button id="btn-card">Card (8)</button>
+      <button id="btn-dialog">Dialog (11)</button>
+    </div>
+    
+    <div class="control-group">
+      <label>Actions</label>
+      <button id="btn-reset">Reset View</button>
+    </div>
+  </div>
+  
+  <div class="canvas-container">
+    <fractal-canvas id="canvas">
+      <!-- Things at different vantages -->
+      <thing-node entity="test:1" vantage="1" style="position: absolute; left: 50px; top: 50px;"></thing-node>
+      <thing-node entity="test:2" vantage="2" style="position: absolute; left: 100px; top: 50px;"></thing-node>
+      
+      <thing-row entity="test:3" vantage="5" style="position: absolute; left: 50px; top: 120px;"></thing-row>
+      <thing-row entity="test:4" vantage="6" style="position: absolute; left: 50px; top: 180px;"></thing-row>
+      <thing-row entity="test:5" vantage="7" style="position: absolute; left: 50px; top: 240px;"></thing-row>
+      
+      <thing-card entity="test:6" vantage="8" style="position: absolute; left: 250px; top: 50px;"></thing-card>
+      <thing-card entity="test:7" vantage="9" style="position: absolute; left: 250px; top: 220px;"></thing-card>
+      
+      <thing-dialog entity="test:8" vantage="11" style="position: absolute; left: 550px; top: 50px;"></thing-dialog>
+    </fractal-canvas>
+    
+    <div class="vantage-display">
+      Scale: <span id="scale-value">1.00</span> | Vantage: <span id="display-vantage">5.0</span>
+    </div>
+  </div>
+  
+  <div class="legend">
+    <div class="legend-item">
+      <strong>Node (0-2)</strong><br>
+      <span>Minimal dot representation</span>
+    </div>
+    <div class="legend-item">
+      <strong>Row (5-7)</strong><br>
+      <span>Table/list item representation</span>
+    </div>
+    <div class="legend-item">
+      <strong>Card (8-10)</strong><br>
+      <span>Kanban card with title and key props</span>
+    </div>
+    <div class="legend-item">
+      <strong>Dialog (11-13)</strong><br>
+      <span>Full properties, editable</span>
+    </div>
+  </div>
+
+  <script type="module">
+    import '/src/index.ts';
+    
+    const canvas = document.getElementById('canvas');
+    const vantageSlider = document.getElementById('vantage-slider');
+    const vantageValue = document.getElementById('vantage-value');
+    const scaleValue = document.getElementById('scale-value');
+    const displayVantage = document.getElementById('display-vantage');
+    
+    // Set up event handlers
+    canvas.addEventListener('vantagechange', (e) => {
+      displayVantage.textContent = e.detail.vantage.toFixed(1);
+    });
+    
+    canvas.addEventListener('scalechange', (e) => {
+      scaleValue.textContent = e.detail.scale.toFixed(2);
+    });
+    
+    // Vantage slider
+    vantageSlider.addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value);
+      updateVantage(v);
+    });
+    
+    function updateVantage(v) {
+      vantageValue.textContent = v.toFixed(1);
+      
+      // Update all things
+      const things = canvas.querySelectorAll('thing-node, thing-row, thing-card, thing-dialog');
+      things.forEach(thing => {
+        thing.setAttribute('vantage', v.toFixed(1));
+      });
+    }
+    
+    // Make functions global for button onclick
+    window.setVantage = (v) => {
+      vantageSlider.value = v;
+      updateVantage(v);
+    };
+    
+    window.resetCanvas = () => {
+      canvas.resetTransform();
+    };
+    
+    // Button event listeners
+    document.getElementById('btn-node')?.addEventListener('click', () => window.setVantage?.(2));
+    document.getElementById('btn-row')?.addEventListener('click', () => window.setVantage?.(5));
+    document.getElementById('btn-card')?.addEventListener('click', () => window.setVantage?.(8));
+    document.getElementById('btn-dialog')?.addEventListener('click', () => window.setVantage?.(11));
+    document.getElementById('btn-reset')?.addEventListener('click', () => window.resetCanvas?.());
+    
+    // Initialize with some mock data
+    window.addEventListener('DOMContentLoaded', () => {
+      // Set initial mock data via the kernel bridge
+      const bridge = window.fractalBridge;
+      if (bridge) {
+        // Emit mock events
+        bridge.emit({ type: 'fact:updated', entity: 'test:3', attribute: 'name', value: 'Review pull request' });
+        bridge.emit({ type: 'fact:updated', entity: 'test:4', attribute: 'name', value: 'Update documentation' });
+        bridge.emit({ type: 'fact:updated', entity: 'test:5', attribute: 'name', value: 'Deploy to staging' });
+        bridge.emit({ type: 'fact:updated', entity: 'test:6', attribute: 'name', value: 'Implement user auth' });
+        bridge.emit({ type: 'fact:updated', entity: 'test:6', attribute: 'description', value: 'Add OAuth2 support for Google and GitHub' });
+        bridge.emit({ type: 'fact:updated', entity: 'test:7', attribute: 'name', value: 'Fix navigation bug' });
+        bridge.emit({ type: 'fact:updated', entity: 'test:8', attribute: 'name', value: 'Database migration' });
+        bridge.emit({ type: 'fact:updated', entity: 'test:8', attribute: 'description', value: 'Run migration script to update schema for new user fields' });
+      }
+    });
+  </script>
+</body>
+</html>

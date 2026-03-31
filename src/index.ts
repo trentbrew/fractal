@@ -67,12 +67,12 @@ export type { FractalCanvasOptions, TransformState, ScaleVantageOptions } from '
 
 // Projections
 export {
-  ProjectionContextElement,
   ProjectionTable,
   ProjectionKanban,
   ProjectionConstellation,
   getProjectionContext,
   resolveVantageWithContext,
+  type ProjectionContextElement,
   type ProjectionType,
   type ProjectionConfig,
 } from './projections/index.js';

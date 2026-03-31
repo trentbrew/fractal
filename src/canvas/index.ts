@@ -11,7 +11,7 @@
  * ```
  */
 
-export { FractalCanvas, scaleToVantage, vantageToScale } from './fractal-canvas.js';
+export { FractalCanvas } from './fractal-canvas.js';
 export { scaleToVantage, vantageToScale } from './scale-vantage.js';
 export type { FractalCanvasOptions, TransformState } from './fractal-canvas.js';
 export type { ScaleVantageOptions } from './scale-vantage.js';
